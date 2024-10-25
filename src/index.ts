@@ -2,6 +2,7 @@ import express, { type Express } from "express";
 import mongoose, { Error } from "mongoose";
 import cors from "cors";
 import authRouter from "./routes/auth.js";
+import organizationsRouter from "./routes/organizations.js";
 
 const HOST: string = process.env.HOST as string;
 const PORT: number = parseInt(process.env.PORT as string);
@@ -26,6 +27,7 @@ mongoose
 
 // Routes
 app.use("/api/v1", authRouter);
+app.use("/api/v1", organizationsRouter);
 
 app.listen(PORT, HOST, () => {
 	console.log(`Listening on ${HOST}:${PORT}`);

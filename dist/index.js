@@ -2,6 +2,7 @@ import express, {} from "express";
 import mongoose, { Error } from "mongoose";
 import cors from "cors";
 import authRouter from "./routes/auth.js";
+import organizationsRouter from "./routes/organizations.js";
 const HOST = process.env.HOST;
 const PORT = parseInt(process.env.PORT);
 const NODE_ENV = process.env.NODE_ENV;
@@ -16,6 +17,7 @@ mongoose
     .then(() => console.log("Connected To DB"), (err) => console.log(`DB Error: ${err}`));
 // Routes
 app.use("/api/v1", authRouter);
+app.use("/api/v1", organizationsRouter);
 app.listen(PORT, HOST, () => {
     console.log(`Listening on ${HOST}:${PORT}`);
 });

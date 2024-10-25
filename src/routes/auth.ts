@@ -2,10 +2,7 @@ import { User } from "../dbSchemas/user.js";
 import jwt from "jsonwebtoken";
 import { RefreshToken } from "../dbSchemas/refresh.js";
 import { type Request, Router } from "express";
-
-type JWTBody = {
-	id: number;
-};
+import type { JWTBody } from "../utils/types.js";
 
 const router: Router = Router();
 
