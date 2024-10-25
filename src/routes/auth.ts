@@ -3,6 +3,10 @@ import jwt from "jsonwebtoken";
 import { RefreshToken } from "../dbSchemas/refresh.js";
 import { type Request, Router } from "express";
 
+type JWTBody = {
+	id: number;
+};
+
 const router: Router = Router();
 
 router.post("/signup", async (req: Request, res: any) => {
@@ -48,6 +52,37 @@ router.post("/signin", async (req: Request, res: any) => {
 		access_token: access_token,
 		refresh_token: refresh_token.token,
 	});
+});
+
+router.post("/refresh-token", async (req: Request, res: any) => {
+	const { refresh_token } = req.body;
+
+	await RefreshToken.findOne({ token: refresh_token }).then(
+		(tokenObject) => {
+			if (!tokenObject)
+				return res.status(404).json({ message: "Token Not Found" });
+
+			jwt.verify(
+				refresh_token,
+				process.env.REFRESH_TOKEN_SECRET as string,
+				{},
+				(_, user: JWTBody) => {
+					const access_token = jwt.sign(
+						{ id: user.id },
+						process.env.ACCESS_TOKEN_SECRET as string,
+						{ expiresIn: process.env.ACCESS_TOKEN_EXPIRATION as string },
+					);
+
+					return res.json({
+						message: "Success",
+						access_token: access_token,
+						refresh_token: refresh_token,
+					});
+				},
+			);
+		},
+		(_) => res.status(500).json({ message: "Internal Server Error" }),
+	);
 });
 
 export default router;
