@@ -9,13 +9,26 @@ import {
 	is_owner,
 	is_owner_or_member,
 } from "../utils/organizations.js";
+import { checkSchema, validationResult } from "express-validator";
+import {
+	createSchema,
+	inviteSchema,
+	putSchema,
+} from "../validationSchemas/organization.js";
 
 const router: Router = Router();
 
 router.post(
 	"/organization",
 	verifyJWT,
+	checkSchema(createSchema),
 	async (req: ExtendedRequest, res: any) => {
+		const result = validationResult(req);
+		if (!result.isEmpty())
+			return res
+				.status(400)
+				.json({ message: "Validation Errors", errors: result.array() });
+
 		const { name, description } = req.body;
 
 		const org = new Organization({
@@ -34,7 +47,14 @@ router.put(
 	verifyJWT,
 	getOrganization,
 	is_owner,
+	checkSchema(putSchema),
 	async (req: ExtendedRequest, res: any) => {
+		const result = validationResult(req);
+		if (!result.isEmpty())
+			return res
+				.status(400)
+				.json({ message: "Validation Errors", errors: result.array() });
+
 		const { name, description } = req.body;
 
 		req.org.name = name;
@@ -96,7 +116,14 @@ router.post(
 	verifyJWT,
 	getOrganization,
 	is_owner,
+	checkSchema(inviteSchema),
 	async (req: ExtendedRequest, res: any) => {
+		const result = validationResult(req);
+		if (!result.isEmpty())
+			return res
+				.status(400)
+				.json({ message: "Validation Errors", errors: result.array() });
+
 		const email: string = req.body.user_email;
 		const user: any = await User.findOne({ email: email });
 
