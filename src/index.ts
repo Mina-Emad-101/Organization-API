@@ -14,16 +14,10 @@ const app: Express = express();
 app.use(cors());
 app.use(express.json());
 
-mongoose
-	.connect(
-		NODE_ENV === "development"
-			? "mongodb://localhost:27017/organization"
-			: `mongodb+srv://mina:${process.env.DBPASSWORD}@cluster0.yjr3f.mongodb.net/organization?retryWrites=true&w=majority&appName=Cluster0`,
-	)
-	.then(
-		() => console.log("Connected To DB"),
-		(err: Error) => console.log(`DB Error: ${err}`),
-	);
+mongoose.connect(`${process.env.MONGODB_URI}/${process.env.DB_NAME}`).then(
+	() => console.log("Connected To DB"),
+	(err: Error) => console.log(`DB Error: ${err}`),
+);
 
 // Routes
 app.use("/api/v1", authRouter);
