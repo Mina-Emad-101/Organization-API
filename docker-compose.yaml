@@ -16,6 +16,8 @@ services:
   # Express API
   api:
     build: .
+    ports:
+      - 10000:10000
     depends_on:
       - mongodb
       - redis
