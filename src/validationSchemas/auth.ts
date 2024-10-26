@@ -1,4 +1,5 @@
 import type { Schema } from "express-validator";
+import { User } from "../dbSchemas/user.js";
 
 export const signupSchema: Schema = {
 	name: {
@@ -8,6 +9,14 @@ export const signupSchema: Schema = {
 	email: {
 		notEmpty: { errorMessage: "Email Cannot Be Empty" },
 		isEmail: { errorMessage: "Invalid Email, Email Format: test@email.com" },
+		custom: {
+			options: async (email) => {
+				const user = await User.findOne({ email: email });
+				if (user) {
+					throw new Error("E-mail already in use");
+				}
+			},
+		},
 	},
 	password: {
 		notEmpty: { errorMessage: "Password Cannot Be Empty" },
@@ -22,7 +31,6 @@ export const signinSchema: Schema = {
 	},
 	password: {
 		notEmpty: { errorMessage: "Password Cannot Be Empty" },
-		isStrongPassword: { errorMessage: "Weak Password" },
 	},
 };
 
