@@ -3,8 +3,6 @@ services:
   mongodb:
     image: mongo:latest
     restart: always
-    ports:
-      - "11111:27017"
     volumes:
       - mongodb:/data/db
 
@@ -12,8 +10,6 @@ services:
   redis:
     image: redis:alpine
     restart: always
-    ports:
-      - "11112:6379"
     command: sh -c "sysctl vm.overcommit_memory=1 && redis-server"
     privileged: true
 
@@ -21,13 +17,11 @@ services:
   api:
     build: .
     ports:
-      - 8080:8080
+      - 10000:10000
     environment:
       NODE_ENV: production
       HOST: 0.0.0.0
-      PORT: 8080
-      ACCESS_TOKEN_SECRET: access
-      REFRESH_TOKEN_SECRET: refresh
+      PORT: 10000
       ACCESS_TOKEN_EXPIRATION: 15m
       REFRESH_TOKEN_EXPIRATION: 259200
       MONGODB_URI: mongodb://mongodb:27017/organization
