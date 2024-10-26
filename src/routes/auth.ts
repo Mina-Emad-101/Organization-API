@@ -1,11 +1,7 @@
 import { User } from "../dbSchemas/user.js";
 import jwt from "jsonwebtoken";
 import { type Request, Router } from "express";
-import type {
-	ExtendedRequest,
-	JWTBody,
-	RefreshJWTBody,
-} from "../utils/types.js";
+import type { ExtendedRequest, RefreshJWTBody } from "../utils/types.js";
 import { checkSchema, validationResult } from "express-validator";
 import {
 	refreshSchema,
@@ -67,7 +63,7 @@ router.post(
 
 		const tokenID = Math.random().toString(36).slice(2);
 		const refresh_token = jwt.sign(
-			{ id: tokenID },
+			{ id: tokenID, user_id: user.id },
 			process.env.REFRESH_TOKEN_SECRET as string,
 		);
 
@@ -97,44 +93,48 @@ router.post(
 
 		const { refresh_token } = req.body;
 
-		try {
-			jwt.verify(
-				refresh_token,
-				process.env.REFRESH_TOKEN_SECRET as string,
-				{},
-				async (err, token: RefreshJWTBody) => {
-					if (err) throw new Error("Invalid Refresh Token");
+		jwt.verify(
+			refresh_token,
+			process.env.REFRESH_TOKEN_SECRET as string,
+			{},
+			async (err, token: RefreshJWTBody) => {
+				if (err)
+					return res.status(400).json({ message: "Invalid Refresh Token" });
+				console.log(token);
 
-					const access_token = jwt.sign(
-						{ id: token.user_id },
-						process.env.ACCESS_TOKEN_SECRET as string,
-						{ expiresIn: process.env.ACCESS_TOKEN_EXPIRATION as string },
-					);
+				const token_exists: boolean =
+					(await redis.exists(`${token.user_id}:${token.id}`)) === 1;
 
-					const tokenID = Math.random().toString(36).slice(2);
-					const refresh_token = jwt.sign(
-						{ id: tokenID, user_id: token.user_id },
-						process.env.REFRESH_TOKEN_SECRET as string,
-					);
+				if (!token_exists)
+					return res.status(400).json({ message: "Expired Refresh Token" });
 
-					await redis.del(`${token.user_id}:${token.id}`);
+				const access_token = jwt.sign(
+					{ id: token.user_id },
+					process.env.ACCESS_TOKEN_SECRET as string,
+					{ expiresIn: process.env.ACCESS_TOKEN_EXPIRATION as string },
+				);
 
-					await redis.setEx(
-						`${token.user_id}:${token.id}` as string,
-						parseInt(process.env.REFRESH_TOKEN_EXPIRATION),
-						refresh_token,
-					);
+				const tokenID = Math.random().toString(36).slice(2);
+				const refresh_token = jwt.sign(
+					{ id: tokenID, user_id: token.user_id },
+					process.env.REFRESH_TOKEN_SECRET as string,
+				);
 
-					return res.json({
-						message: "Success",
-						access_token: access_token,
-						refresh_token: refresh_token,
-					});
-				},
-			);
-		} catch (err) {
-			return res.status(400).json({ message: err.message });
-		}
+				await redis.del(`${token.user_id}:${token.id}`);
+
+				await redis.setEx(
+					`${token.user_id}:${tokenID}` as string,
+					parseInt(process.env.REFRESH_TOKEN_EXPIRATION),
+					refresh_token,
+				);
+
+				return res.json({
+					message: "Success",
+					access_token: access_token,
+					refresh_token: refresh_token,
+				});
+			},
+		);
 	},
 );
 
@@ -142,28 +142,10 @@ router.post(
 	"/revoke-refresh-token",
 	verifyJWT,
 	async (req: ExtendedRequest, res: any) => {
-		const { refresh_token } = req.body;
+		const keys = await redis.keys(`${req.user.id}:*`);
+		await redis.del(keys);
 
-		try {
-			jwt.verify(
-				refresh_token,
-				process.env.REFRESH_TOKEN_SECRET,
-				{},
-				async (err, token: RefreshJWTBody) => {
-					if (err) throw new Error("Invalid Refresh Token");
-
-					if (req.user.id !== token.user_id)
-						throw new Error("Refresh Token Belongs to Another User");
-
-					const keys = await redis.keys(`${token.user_id}:*`);
-					await redis.del(keys);
-
-					return res.json({ message: "Success" });
-				},
-			);
-		} catch (err) {
-			return res.status(400).json({ message: err.message });
-		}
+		return res.json({ message: "Success" });
 	},
 );
 
