@@ -18,8 +18,7 @@ services:
       ACCESS_TOKEN_SECRET: access
       REFRESH_TOKEN_SECRET: refresh
       ACCESS_TOKEN_EXPIRATION: 15m
-      MONGODB_URI: mongodb://mongodb:27017
-      DB_NAME: organization
+      MONGODB_URI: mongodb://mongodb:27017/organization
     depends_on:
       - mongodb
 
