@@ -16,16 +16,6 @@ services:
   # Express API
   api:
     build: .
-    ports:
-      - 10000:10000
-    environment:
-      NODE_ENV: production
-      HOST: 0.0.0.0
-      PORT: 10000
-      ACCESS_TOKEN_EXPIRATION: 15m
-      REFRESH_TOKEN_EXPIRATION: 259200
-      MONGODB_URI: mongodb://mongodb:27017/organization
-      REDIS_URI: redis://redis:6379
     depends_on:
       - mongodb
       - redis
