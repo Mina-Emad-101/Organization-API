@@ -7,7 +7,7 @@ export const getOrganization = async (
 	next: () => any,
 ) => {
 	const id: string = req.params.id;
-	const org = await Organization.findById(id).catch((err) =>
+	const org = await Organization.findById(id).catch((_) =>
 		res.status(400).json({ message: "Invalid ID" }),
 	);
 	if (!org) return res.status(404).json({ message: "Organization Not Found" });

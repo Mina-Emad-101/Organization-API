@@ -1,6 +1,5 @@
 import { User } from "../dbSchemas/user.js";
 import jwt from "jsonwebtoken";
-import { RefreshToken } from "../dbSchemas/refresh.js";
 import { type Request, Router } from "express";
 import type { JWTBody } from "../utils/types.js";
 import { checkSchema, validationResult } from "express-validator";
@@ -9,6 +8,7 @@ import {
 	signinSchema,
 	signupSchema,
 } from "../validationSchemas/auth.js";
+import { redis } from "../index.js";
 
 const router: Router = Router();
 
@@ -60,19 +60,21 @@ router.post(
 			{ expiresIn: process.env.ACCESS_TOKEN_EXPIRATION as string },
 		);
 
-		const refresh_token = new RefreshToken({
-			token: jwt.sign(
-				{ id: user.id },
-				process.env.REFRESH_TOKEN_SECRET as string,
-			),
-		});
+		const refresh_token = jwt.sign(
+			{ id: user.id },
+			process.env.REFRESH_TOKEN_SECRET as string,
+		);
 
-		await refresh_token.save();
+		await redis.setEx(
+			user.id,
+			parseInt(process.env.REFRESH_TOKEN_EXPIRATION),
+			refresh_token,
+		);
 
 		return res.json({
 			message: "Success",
 			access_token: access_token,
-			refresh_token: refresh_token.token,
+			refresh_token: refresh_token,
 		});
 	},
 );
@@ -89,31 +91,36 @@ router.post(
 
 		const { refresh_token } = req.body;
 
-		await RefreshToken.findOne({ token: refresh_token }).then(
-			(tokenObject) => {
-				if (!tokenObject)
-					return res.status(404).json({ message: "Token Not Found" });
-
-				jwt.verify(
-					refresh_token,
-					process.env.REFRESH_TOKEN_SECRET as string,
-					{},
-					(_, user: JWTBody) => {
-						const access_token = jwt.sign(
-							{ id: user.id },
-							process.env.ACCESS_TOKEN_SECRET as string,
-							{ expiresIn: process.env.ACCESS_TOKEN_EXPIRATION as string },
-						);
-
-						return res.json({
-							message: "Success",
-							access_token: access_token,
-							refresh_token: refresh_token,
-						});
-					},
+		jwt.verify(
+			refresh_token,
+			process.env.REFRESH_TOKEN_SECRET as string,
+			{},
+			async (_, user: JWTBody) => {
+				const access_token = jwt.sign(
+					{ id: user.id },
+					process.env.ACCESS_TOKEN_SECRET as string,
+					{ expiresIn: process.env.ACCESS_TOKEN_EXPIRATION as string },
 				);
+
+				const refresh_token = jwt.sign(
+					{ id: user.id },
+					process.env.REFRESH_TOKEN_SECRET as string,
+				);
+
+				await redis.del(user.id);
+
+				await redis.setEx(
+					user.id as string,
+					parseInt(process.env.REFRESH_TOKEN_EXPIRATION),
+					refresh_token,
+				);
+
+				return res.json({
+					message: "Success",
+					access_token: access_token,
+					refresh_token: refresh_token,
+				});
 			},
-			(_) => res.status(500).json({ message: "Internal Server Error" }),
 		);
 	},
 );

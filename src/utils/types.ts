@@ -1,7 +1,7 @@
 import type { Request } from "express";
 
 export type JWTBody = {
-	id: number;
+	id: string;
 };
 
 export interface ExtendedRequest extends Request {
