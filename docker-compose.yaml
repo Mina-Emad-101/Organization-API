@@ -3,8 +3,18 @@ services:
   mongodb:
     image: mongo:latest
     restart: always
+    ports:
+      - "27017:27017"
     volumes:
       - mongodb:/data/db
+
+  # Redis Cache
+  redis:
+    image: redis:alpine
+    restart: always
+    ports:
+      - "6379:6379"
+    command: redis-server
 
   # Express API
   api:
@@ -18,9 +28,12 @@ services:
       ACCESS_TOKEN_SECRET: access
       REFRESH_TOKEN_SECRET: refresh
       ACCESS_TOKEN_EXPIRATION: 15m
+      REFRESH_TOKEN_EXPIRATION: 259200
       MONGODB_URI: mongodb://mongodb:27017/organization
+      REDIS_URI: redis://redis:6379
     depends_on:
       - mongodb
+      - redis
 
 volumes:
   mongodb: {}

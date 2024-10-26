@@ -3,3 +3,4 @@ dist/
 Dockerfile
 docker-compose.yaml
 .dockerignore
+.env
