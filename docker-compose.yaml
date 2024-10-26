@@ -4,7 +4,7 @@ services:
     image: mongo:latest
     restart: always
     ports:
-      - "27017:27017"
+      - "11111:27017"
     volumes:
       - mongodb:/data/db
 
@@ -13,8 +13,9 @@ services:
     image: redis:alpine
     restart: always
     ports:
-      - "6379:6379"
-    command: redis-server
+      - "11112:6379"
+    command: sh -c "sysctl vm.overcommit_memory=1 && redis-server"
+    privileged: true
 
   # Express API
   api:
