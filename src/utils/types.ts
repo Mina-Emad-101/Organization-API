@@ -1,14 +1,9 @@
-import type { Request } from "express";
+import type { JwtPayload } from "jsonwebtoken";
 
-export interface JWTBody {
-	id: string;
+export interface JWTBody extends JwtPayload {
+  id: string;
 }
 
 export interface RefreshJWTBody extends JWTBody {
-	user_id: string;
-}
-
-export interface ExtendedRequest extends Request {
-	user?: any;
-	org?: any;
+  user_id: string;
 }
