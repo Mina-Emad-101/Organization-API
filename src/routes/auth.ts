@@ -8,7 +8,7 @@ import {
 	signinSchema,
 	signupSchema,
 } from "../validationSchemas/auth.js";
-import { redis } from "../index.js";
+import { redis } from "../data-sources.js";
 import { verifyJWT } from "../utils/auth.js";
 
 const router: Router = Router();
